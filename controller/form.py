@@ -3,7 +3,7 @@ import requests
 import os
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-MAX_CLIENT_UPLOAD_SIZE = os.getenv('MAX_CLIENT_UPLOAD_SIZE')
+MAX_CLIENT_UPLOAD_SIZE = int(os.getenv('MAX_CLIENT_UPLOAD_SIZE', 5))
 BACKEND_URL = os.getenv(f'{os.getenv('ENV')}_URL')
 
 def submit_extract_request(files):
