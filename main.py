@@ -1,26 +1,38 @@
 import streamlit as st
 import plotly.express as px
+from dotenv import load_dotenv
 from controller import form
 
-response = None
+load_dotenv()
+
 if 'response' not in st.session_state:
     st.session_state.response = None
 
 st.title('ReAs Apps')
 st.text('ReAs is a tool to extract a positive and negative topic from your list of reviews. Later on, you could use the information to enhance your product/businesses.', width='content')
+# st.markdown('ReAs is a tool to extract a positive and negative topic from your list of reviews. Later on, you could use the information to enhance your product/businesses.', width='content')
 
 st.divider()
 
-with st.form('data_form'):
-    fileUpload = st.file_uploader('Upload your file.', help='Only receives .csv file.', type=['csv'])
-    submit = st.form_submit_button('Extract')
+fileUpload = st.file_uploader('Upload your file.', help='Only receives .csv file and ensure the file contains review text.', type=['csv'])
+if fileUpload:
+    with st.spinner('Validating and checking your file.'):
+        validate_file = form.get_csv_columns(fileUpload)
+        if validate_file.get('status') == 'error':
+            st.error(validate_file['message'])
 
-    if submit and fileUpload:
-        with st.spinner('Predicting and extracting...'):
-            files = {'file' : (fileUpload.name, fileUpload, fileUpload.type)}
-            st.session_state.response = form.submit_extract_request('http://localhost:8000/extract', files=files)
-            if st.session_state.response['status'] == 'error':
-                st.error(st.session_state.response['message'])
+if fileUpload and validate_file.get('status') != 'error':
+    with st.form('data_form'):
+        st.dataframe(validate_file['data']['sample'])
+        file_columns = st.selectbox('Choose text review column based on your data above.', options=validate_file['data']['columns'])
+        submit = st.form_submit_button('Extract')
+
+        if submit:
+            with st.spinner('Predicting and extracting...'):
+                files = {'file' : (fileUpload.name, fileUpload, fileUpload.type)}
+                st.session_state.response = form.submit_extract_request(files=files)
+                if st.session_state.response['status'] == 'error':
+                    st.error(st.session_state.response['message'])
 
 st.divider()
 
