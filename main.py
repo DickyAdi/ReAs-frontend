@@ -1,9 +1,7 @@
 import streamlit as st
 import plotly.express as px
-from dotenv import load_dotenv
 from controller import form
 
-load_dotenv()
 
 if 'response' not in st.session_state:
     st.session_state.response = None
@@ -30,7 +28,7 @@ if fileUpload and validate_file.get('status') != 'error':
         if submit:
             with st.spinner('Predicting and extracting...'):
                 files = {'file' : (fileUpload.name, fileUpload, fileUpload.type)}
-                st.session_state.response = form.submit_extract_request(files=files)
+                st.session_state.response = form.submit_extract_request(files=files, text_column=file_columns)
                 if st.session_state.response['status'] == 'error':
                     st.error(st.session_state.response['message'])
 

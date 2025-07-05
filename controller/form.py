@@ -2,13 +2,12 @@ import pandas as pd
 import requests
 import os
 from streamlit.runtime.uploaded_file_manager import UploadedFile
+from config.settings import settings
 
-MAX_CLIENT_UPLOAD_SIZE = int(os.getenv('MAX_CLIENT_UPLOAD_SIZE', 5))
-BACKEND_URL = os.getenv(f'{os.getenv('ENV')}_URL')
-
-def submit_extract_request(files):
+def submit_extract_request(files, text_column):
     try:
-        response = requests.post(BACKEND_URL, files=files)
+        params = {'text_column' : text_column}
+        response = requests.post(settings.BACKEND_URL, files=files, params=params)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.HTTPError as e:
@@ -49,12 +48,12 @@ def submit_extract_request(files):
 
 def validate_csv(file:UploadedFile):
     _, ext = os.path.splitext(file.name)
-    if ext != ".csv" and file.size > MAX_CLIENT_UPLOAD_SIZE * 1024 * 1024:
+    if ext != ".csv" and file.size > settings.MAX_CLIENT_UPLOAD_SIZE * 1024 * 1024:
         return {
             'status' : 'error',
             'code' : 422,
             'error' : 'UnprocessableEntity',
-            'message' : f'Cannot process file, either type mismatch or size > {MAX_CLIENT_UPLOAD_SIZE}MB.'
+            'message' : f'Cannot process file, either type mismatch or size > {settings.MAX_CLIENT_UPLOAD_SIZE}MB.'
         }
     return file
 
@@ -65,6 +64,7 @@ def get_csv_columns(file:UploadedFile):
     else:
         try:
             df = pd.read_csv(file, nrows=2)
+            file.seek(0)
             return {
                 'status' : 'success',
                 'code' : 200,
