@@ -38,6 +38,8 @@ top_n = st.selectbox('How many topics would you want to extract?', (10, 20, 30))
 sentiment = st.selectbox('What sentiment topic would you want to extract?', ('Positive', 'Negative'))
 
 if st.session_state.response and isinstance(st.session_state.response, dict) and st.session_state.response.get('status') == 'success':
+    if st.session_state.response['data']['number_valid_rows'] <= 10:
+        st.warning('Your data contain less than 1 row. More row is expected for better insights.')
     df = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
     fig = px.bar(df, x='score', y='word', orientation='h')
     st.plotly_chart(fig)

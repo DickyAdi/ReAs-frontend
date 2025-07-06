@@ -87,5 +87,9 @@ def visualize(response, top_n, sentiment):
         df = pd.DataFrame(response['data']['positive_topics'])
     elif sentiment == 'Negative':
         df = pd.DataFrame(response['data']['negative_topics'])
-    df = df.sort_values(by=['score'], ascending=False).head(top_n)
+
+    if not df.empty and 'score' in df.columns:
+        df = df.sort_values(by=['score'], ascending=False).head(top_n)
+    else:
+        df = pd.DataFrame(columns=['word', 'score'])
     return df
