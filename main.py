@@ -8,7 +8,6 @@ if 'response' not in st.session_state:
 
 st.title('ReAs Apps')
 st.text('ReAs is a tool to extract a positive and negative topic from your list of reviews. Later on, you could use the information to enhance your product/businesses.', width='content')
-# st.markdown('ReAs is a tool to extract a positive and negative topic from your list of reviews. Later on, you could use the information to enhance your product/businesses.', width='content')
 
 st.divider()
 
@@ -38,8 +37,12 @@ top_n = st.selectbox('How many topics would you want to extract?', (10, 20, 30))
 sentiment = st.selectbox('What sentiment topic would you want to extract?', ('Positive', 'Negative'))
 
 if st.session_state.response and isinstance(st.session_state.response, dict) and st.session_state.response.get('status') == 'success':
-    if st.session_state.response['data']['number_valid_rows'] <= 10:
-        st.warning('Your data contain less than 1 row. More row is expected for better insights.')
+    count_topics = st.session_state.response['data'][sentiment.lower()]['count']
+    count_valid = st.session_state.response['data']['number_valid_rows']
+    if count_valid <= 10:
+        st.warning('Your data contain less than 10 row. More row is expected for better insights.')
+    else:
+        st.info(f'Out of {count_valid} reviews, found {count_topics} {sentiment} words.')
     df = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
     fig = px.bar(df, x='score', y='word', orientation='h')
     st.plotly_chart(fig)

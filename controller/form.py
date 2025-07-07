@@ -3,11 +3,14 @@ import requests
 import os
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 from config.settings import settings
+from urllib.parse import urljoin
 
 def submit_extract_request(files, text_column):
     try:
+        endpoint = '/extract'
+        path = urljoin(settings.backend_url, endpoint)
         params = {'text_column' : text_column}
-        response = requests.post(settings.BACKEND_URL, files=files, params=params)
+        response = requests.post(path, files=files, params=params)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.HTTPError as e:
@@ -48,12 +51,12 @@ def submit_extract_request(files, text_column):
 
 def validate_csv(file:UploadedFile):
     _, ext = os.path.splitext(file.name)
-    if ext != ".csv" and file.size > settings.MAX_CLIENT_UPLOAD_SIZE * 1024 * 1024:
+    if ext != ".csv" and file.size > settings.max_size_bytes:
         return {
             'status' : 'error',
             'code' : 422,
             'error' : 'UnprocessableEntity',
-            'message' : f'Cannot process file, either type mismatch or size > {settings.MAX_CLIENT_UPLOAD_SIZE}MB.'
+            'message' : f'Cannot process file, either type mismatch or size > {settings.max_size_mb} MB.'
         }
     return file
 
@@ -84,9 +87,9 @@ def get_csv_columns(file:UploadedFile):
 
 def visualize(response, top_n, sentiment):
     if sentiment == 'Positive':
-        df = pd.DataFrame(response['data']['positive_topics'])
+        df = pd.DataFrame(response['data']['positive']['topics'])
     elif sentiment == 'Negative':
-        df = pd.DataFrame(response['data']['negative_topics'])
+        df = pd.DataFrame(response['data']['negative']['topics'])
 
     if not df.empty and 'score' in df.columns:
         df = df.sort_values(by=['score'], ascending=False).head(top_n)
