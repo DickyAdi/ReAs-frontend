@@ -51,7 +51,7 @@ def submit_extract_request(files, text_column):
 
 def validate_csv(file:UploadedFile):
     _, ext = os.path.splitext(file.name)
-    if ext != ".csv" and file.size > settings.max_size_bytes:
+    if ext != ".csv" or file.size > settings.max_size_bytes:
         return {
             'status' : 'error',
             'code' : 422,
