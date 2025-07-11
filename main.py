@@ -3,6 +3,9 @@ import plotly.express as px
 from controller import form
 
 
+top_n = 10
+sentiment = 'Positive'
+
 if 'response' not in st.session_state:
     st.session_state.response = None
 
@@ -33,16 +36,24 @@ if fileUpload and validate_file.get('status') != 'error':
 
 st.divider()
 
-top_n = st.selectbox('How many topics would you want to extract?', (10, 20, 30))
-sentiment = st.selectbox('What sentiment topic would you want to extract?', ('Positive', 'Negative'))
 
 if st.session_state.response and isinstance(st.session_state.response, dict) and st.session_state.response.get('status') == 'success':
+    top_n = st.selectbox('How many topics would you want to extract?', (10, 20, 30))
+    sentiment = st.selectbox('What sentiment topic would you want to extract?', ('Positive', 'Negative'))
     count_topics = st.session_state.response['data'][sentiment.lower()]['count']
     count_valid = st.session_state.response['data']['number_valid_rows']
-    if count_valid <= 10:
-        st.warning('Your data contain less than 10 row. More row is expected for better insights.')
-    else:
-        st.info(f'Out of {count_valid} reviews, found {count_topics} {sentiment} words.')
-    df = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
-    fig = px.bar(df, x='score', y='word', orientation='h')
-    st.plotly_chart(fig)
+    total_metric, sentiment_metric = st.columns(2)
+    data_container = st.columns(1)
+    data_container2 = st.columns(1)
+    with st.container():
+        if count_valid <= 10:
+            st.warning('Your data contain less than 10 row. More row is expected for better insights.')
+        else:
+            # row_1.append(st.info(f'Out of {count_valid} reviews, found {count_topics} {sentiment} words.'))
+            sentiment_metric.metric(f'{sentiment} topics', form.get_humanize_metric(count_topics))
+            total_metric.metric('Total valid reviews', form.get_humanize_metric(count_valid))
+        df = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
+        fig = px.bar(df, x='score', y='word', orientation='h')
+        placeholder_mean = px.bar(df, x='score', y='word', orientation='h')
+        data_container.append((st.header('Std'),st.plotly_chart(fig, key='std')))
+        data_container2.append((st.header('mean'), st.plotly_chart(placeholder_mean, key='mean')))

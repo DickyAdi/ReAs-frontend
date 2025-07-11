@@ -4,6 +4,7 @@ import os
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 from config.settings import settings
 from urllib.parse import urljoin
+from millify import millify
 
 def submit_extract_request(files, text_column):
     try:
@@ -84,6 +85,15 @@ def get_csv_columns(file:UploadedFile):
                 'error' : 'Exception',
                 'message' : str(e)
             }
+        
+def process_response(response):
+    pos = pd.DataFrame(response['data']['positive']['topics'])
+    neg = pd.DataFrame(response['data']['negative']['topics'])
+    df = pd.concat([pos, neg])
+    return df
+
+def get_humanize_metric(value):
+    return millify(value, precision=2)
 
 def visualize(response, top_n, sentiment):
     if sentiment == 'Positive':
