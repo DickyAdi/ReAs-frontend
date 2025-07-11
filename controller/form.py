@@ -97,12 +97,14 @@ def get_humanize_metric(value):
 
 def visualize(response, top_n, sentiment):
     if sentiment == 'Positive':
-        df = pd.DataFrame(response['data']['positive']['topics'])
+        df_std = pd.DataFrame(response['data']['positive']['topics_std'])
+        df_mean = pd.DataFrame(response['data']['positive']['topics_mean'])
     elif sentiment == 'Negative':
-        df = pd.DataFrame(response['data']['negative']['topics'])
+        df_std = pd.DataFrame(response['data']['negative']['topics_std'])
+        df_mean = pd.DataFrame(response['data']['negative']['topics_mean'])
 
-    if not df.empty and 'score' in df.columns:
-        df = df.sort_values(by=['score'], ascending=False).head(top_n)
-    else:
-        df = pd.DataFrame(columns=['word', 'score'])
-    return df
+
+    df_std = df_std.sort_values(by=['score'], ascending=False).head(top_n)
+    df_mean = df_mean.sort_values(by=['score'], ascending=False).head(top_n)
+
+    return df_std, df_mean

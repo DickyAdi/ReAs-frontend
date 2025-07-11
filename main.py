@@ -49,11 +49,14 @@ if st.session_state.response and isinstance(st.session_state.response, dict) and
         if count_valid <= 10:
             st.warning('Your data contain less than 10 row. More row is expected for better insights.')
         else:
-            # row_1.append(st.info(f'Out of {count_valid} reviews, found {count_topics} {sentiment} words.'))
             sentiment_metric.metric(f'{sentiment} topics', form.get_humanize_metric(count_topics))
             total_metric.metric('Total valid reviews', form.get_humanize_metric(count_valid))
-        df = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
-        fig = px.bar(df, x='score', y='word', orientation='h')
-        placeholder_mean = px.bar(df, x='score', y='word', orientation='h')
-        data_container.append((st.header('Std'),st.plotly_chart(fig, key='std')))
-        data_container2.append((st.header('mean'), st.plotly_chart(placeholder_mean, key='mean')))
+        df_std, df_mean = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
+        std_fig = px.bar(df_std, x='score', y='word', orientation='h')
+        mean_fig = px.bar(df_mean, x='score', y='word', orientation='h')
+        data_container.append(
+            (st.header('Key Attention Points', help="These topics don't appear in every review, but when they do, they often reflect strong opinions whether it is good or bad."),
+            st.plotly_chart(std_fig, key='std')))
+        data_container2.append(
+            (st.header('Most Talked Topics.', help='Refers to the most mentioned topics within the reviews.'),
+            st.plotly_chart(mean_fig, key='mean')))
