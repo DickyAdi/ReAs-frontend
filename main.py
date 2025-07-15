@@ -1,6 +1,7 @@
 import streamlit as st
 import plotly.express as px
-from controller import form
+
+from controller import csv_controller, prediction_controller
 
 
 top_n = 10
@@ -17,7 +18,7 @@ st.divider()
 fileUpload = st.file_uploader('Upload your file.', help='Only receives .csv file and ensure the file contains review text.', type=['csv'])
 if fileUpload:
     with st.spinner('Validating and checking your file.'):
-        validate_file = form.get_csv_columns(fileUpload)
+        validate_file = csv_controller.get_csv_columns(fileUpload)
         if validate_file.get('status') == 'error':
             st.error(validate_file['message'])
 
@@ -30,19 +31,19 @@ if fileUpload and validate_file.get('status') != 'error':
         if submit:
             with st.spinner('Predicting and extracting...'):
                 files = {'file' : (fileUpload.name, fileUpload, fileUpload.type)}
-                st.session_state.response = form.submit_extract_request(files=files, text_column=file_columns)
-                if st.session_state.response['status'] == 'error':
-                    st.error(st.session_state.response['message'])
+                st.session_state.response = prediction_controller.extract_predict(file=files, text_column=file_columns)
+                if st.session_state.response.status == 'error':
+                    st.error(st.session_state.response.message)
 
 st.divider()
 
 
-if st.session_state.response and isinstance(st.session_state.response, dict) and st.session_state.response.get('status') == 'success':
+if st.session_state.response and st.session_state.response.status == 'success':
     top_n = st.selectbox('How many topics would you want to extract?', (10, 20, 30))
     sentiment = st.selectbox('What sentiment topic would you want to extract?', ('Positive', 'Negative'))
     # count_topics = st.session_state.response['data'][sentiment.lower()]['count']
-    n_positive, n_negative = form.get_sentiment_number(st.session_state.response)
-    count_valid = st.session_state.response['data']['number_valid_rows']
+    n_positive, n_negative = prediction_controller.get_sentiment_number(st.session_state.response)
+    count_valid = st.session_state.response.data['number_valid_rows']
     total_metric, positive_metric, negative_metric = st.columns(3)
     data_container = st.columns(1)
     data_container2 = st.columns(1)
@@ -50,10 +51,10 @@ if st.session_state.response and isinstance(st.session_state.response, dict) and
         if count_valid <= 10:
             st.warning('Your data contain less than 10 row. More row is expected for better insights.')
         else:
-            positive_metric.metric(f'Positive sentiments', form.get_humanize_metric(n_positive))
-            negative_metric.metric(f'Negative sentiments', form.get_humanize_metric(n_negative))
-            total_metric.metric('Total valid reviews', form.get_humanize_metric(count_valid))
-        df_trend, df_frequent = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
+            positive_metric.metric(f'Positive sentiments', n_positive)
+            negative_metric.metric(f'Negative sentiments', n_negative)
+            total_metric.metric('Total valid reviews', prediction_controller.humanize_value(count_valid))
+        df_trend, df_frequent = prediction_controller.get_df(st.session_state.response, top_n=top_n, sentiment=sentiment)
         trend_fig = px.bar(df_trend, x='score', y='word', orientation='h')
         frequent_fig = px.bar(df_frequent, x='score', y='word', orientation='h')
         data_container.append(
