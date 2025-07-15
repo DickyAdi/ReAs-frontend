@@ -85,26 +85,25 @@ def get_csv_columns(file:UploadedFile):
                 'error' : 'Exception',
                 'message' : str(e)
             }
-        
-def process_response(response):
-    pos = pd.DataFrame(response['data']['positive']['topics'])
-    neg = pd.DataFrame(response['data']['negative']['topics'])
-    df = pd.concat([pos, neg])
-    return df
+
+def get_sentiment_number(response):
+    pos = response['data']['positive']['count']
+    neg = response['data']['negative']['count']
+    return pos, neg
 
 def get_humanize_metric(value):
     return millify(value, precision=2)
 
 def visualize(response, top_n, sentiment):
     if sentiment == 'Positive':
-        df_std = pd.DataFrame(response['data']['positive']['topics_std'])
-        df_mean = pd.DataFrame(response['data']['positive']['topics_mean'])
+        df_trend = pd.DataFrame(response['data']['positive']['trend_topics'])
+        df_frequent = pd.DataFrame(response['data']['positive']['frequent_topics'])
     elif sentiment == 'Negative':
-        df_std = pd.DataFrame(response['data']['negative']['topics_std'])
-        df_mean = pd.DataFrame(response['data']['negative']['topics_mean'])
+        df_trend = pd.DataFrame(response['data']['negative']['trend_topics'])
+        df_frequent = pd.DataFrame(response['data']['negative']['frequent_topics'])
 
 
-    df_std = df_std.sort_values(by=['score'], ascending=False).head(top_n)
-    df_mean = df_mean.sort_values(by=['score'], ascending=False).head(top_n)
+    df_trend = df_trend.sort_values(by=['score'], ascending=False).head(top_n)
+    df_frequent = df_frequent.sort_values(by=['score'], ascending=False).head(top_n)
 
-    return df_std, df_mean
+    return df_trend, df_frequent
