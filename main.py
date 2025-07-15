@@ -40,23 +40,27 @@ st.divider()
 if st.session_state.response and isinstance(st.session_state.response, dict) and st.session_state.response.get('status') == 'success':
     top_n = st.selectbox('How many topics would you want to extract?', (10, 20, 30))
     sentiment = st.selectbox('What sentiment topic would you want to extract?', ('Positive', 'Negative'))
-    count_topics = st.session_state.response['data'][sentiment.lower()]['count']
+    # count_topics = st.session_state.response['data'][sentiment.lower()]['count']
+    n_positive, n_negative = form.get_sentiment_number(st.session_state.response)
     count_valid = st.session_state.response['data']['number_valid_rows']
-    total_metric, sentiment_metric = st.columns(2)
+    total_metric, positive_metric, negative_metric = st.columns(3)
     data_container = st.columns(1)
     data_container2 = st.columns(1)
     with st.container():
         if count_valid <= 10:
             st.warning('Your data contain less than 10 row. More row is expected for better insights.')
         else:
-            sentiment_metric.metric(f'{sentiment} topics', form.get_humanize_metric(count_topics))
+            positive_metric.metric(f'Positive sentiments', form.get_humanize_metric(n_positive))
+            negative_metric.metric(f'Negative sentiments', form.get_humanize_metric(n_negative))
             total_metric.metric('Total valid reviews', form.get_humanize_metric(count_valid))
-        df_std, df_mean = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
-        std_fig = px.bar(df_std, x='score', y='word', orientation='h')
-        mean_fig = px.bar(df_mean, x='score', y='word', orientation='h')
+        df_trend, df_frequent = form.visualize(st.session_state.response, top_n=top_n, sentiment=sentiment)
+        trend_fig = px.bar(df_trend, x='score', y='word', orientation='h')
+        frequent_fig = px.bar(df_frequent, x='score', y='word', orientation='h')
         data_container.append(
-            (st.header('Key Attention Points', help="These topics don't appear in every review, but when they do, they often reflect strong opinions whether it is good or bad."),
-            st.plotly_chart(std_fig, key='std')))
+            (st.header('Trending topics'),
+            st.caption("This figure highlights topics that are not only frequently mentioned, but also show strong spikes in attention across reviews. A high score means this topic is being discussed intensely in bursts. Useful for spotting emerging praise or recurring complaints."),
+            st.plotly_chart(trend_fig, key='std')))
         data_container2.append(
-            (st.header('Most Talked Topics.', help='Refers to the most mentioned topics within the reviews.'),
-            st.plotly_chart(mean_fig, key='mean')))
+            (st.header('Commonly Discussed'),
+            st.caption('This figure shows which topics people talk about the most across all reviews. A higher score means the topic is mentioned frequently and consistently, highlighting what matters most to customers overall.'),
+            st.plotly_chart(frequent_fig, key='mean')))
